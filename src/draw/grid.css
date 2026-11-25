@@ -1,0 +1,80 @@
+/* Draw grid */
+
+.group__title {
+  margin: var(--space-8) 0 var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: var(--rule) solid var(--color-rule);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+  gap: var(--space-3);
+}
+
+.cell {
+  border: var(--rule) solid var(--color-rule);
+  background: var(--color-surface);
+}
+
+.cell--drawn {
+  border-color: var(--color-rule-strong);
+}
+
+.cell__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-1) var(--space-2);
+  border-bottom: var(--rule) solid var(--color-rule);
+}
+
+.cell__label {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.cell__actions {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.cell__button {
+  min-height: 1.75rem;
+  padding: 0 var(--space-2);
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--text-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.cell__button:hover:not(:disabled) {
+  color: var(--color-accent);
+  text-decoration: underline;
+}
+
+.cell__button:disabled {
+  color: var(--color-concrete);
+  cursor: default;
+}
+
+.cell__canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  cursor: crosshair;
+  /* The canvas handles every touch itself, so drawing never scrolls the page. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
