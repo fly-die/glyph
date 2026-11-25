@@ -196,6 +196,15 @@ a:hover {
   background: var(--color-accent);
 }
 
+.button--secondary {
+  background: none;
+  color: var(--color-ink);
+}
+
+.button--secondary:hover:not(:disabled) {
+  color: var(--color-bone);
+}
+
 .button:disabled {
   border-color: var(--color-rule);
   background: none;

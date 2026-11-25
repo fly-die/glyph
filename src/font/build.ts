@@ -97,6 +97,6 @@ export function buildFont(strokesByChar: ReadonlyMap<string, readonly Stroke[]>,
   });
 }
 
-export function fontFileName(familyName: string): string {
-  return `${sanitizeFamilyName(familyName).replace(/ /g, '')}-Regular.otf`;
+export function fontFileName(familyName: string, extension: 'otf' | 'woff2' = 'otf'): string {
+  return `${sanitizeFamilyName(familyName).replace(/ /g, '')}-Regular.${extension}`;
 }

@@ -108,5 +108,6 @@ describe('sanitizeFamilyName', () => {
 
   it('builds the file name from the family name', () => {
     expect(fontFileName('Flynn Hand')).toBe('FlynnHand-Regular.otf');
+    expect(fontFileName('Flynn Hand', 'woff2')).toBe('FlynnHand-Regular.woff2');
   });
 });

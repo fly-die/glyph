@@ -12,3 +12,9 @@
   flex: 1 1 16rem;
   max-width: 24rem;
 }
+
+.export__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
