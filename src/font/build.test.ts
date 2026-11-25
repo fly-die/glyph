@@ -36,6 +36,15 @@ describe('buildFont', () => {
     expect(font.charToGlyphIndex('B')).toBe(0);
   });
 
+  it('maps curly quotes and the Unicode hyphen to the drawn straight forms', () => {
+    const tick = [stroke([[100, 40], [96, 70]])];
+    const font = roundTrip({ "'": tick, '"': [...tick, stroke([[120, 40], [116, 70]])], '-': [stroke([[60, 120], [140, 120]])] });
+    for (const quote of ['‘', '’']) expect(font.charToGlyph(quote).name).toBe('quotesingle');
+    for (const quote of ['“', '”']) expect(font.charToGlyph(quote).name).toBe('quotedbl');
+    expect(font.charToGlyph('‐').name).toBe('hyphen');
+    expect(font.charToGlyph('(').name).toBe('.notdef');
+  });
+
   it('carries the family name into the name table', () => {
     const font = roundTrip({ A }, 'Flynn Script');
     expect(font.getEnglishName('fontFamily')).toBe('Flynn Script');

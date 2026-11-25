@@ -1,5 +1,5 @@
 import { Font, Glyph, Path } from 'opentype.js';
-import { CHARSET } from '../glyphs/charset';
+import { CHARSET, codePoints, glyphName } from '../glyphs/charset';
 import {
   ASCENDER,
   DESCENDER,
@@ -13,8 +13,6 @@ import { strokesToContours, type Contour, type Stroke } from '../outline';
 export const DEFAULT_FAMILY_NAME = 'My Hand';
 const MAX_FAMILY_NAME_LENGTH = 40;
 
-const DIGIT_NAMES = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
-
 /**
  * Font menus and the PostScript name only take plain ASCII reliably, so the
  * family name is reduced to letters, digits, spaces and hyphens.
@@ -27,10 +25,6 @@ export function sanitizeFamilyName(raw: string): string {
     .slice(0, MAX_FAMILY_NAME_LENGTH)
     .trim();
   return cleaned || DEFAULT_FAMILY_NAME;
-}
-
-function glyphName(char: string): string {
-  return DIGIT_NAMES[Number(char)] ?? char;
 }
 
 function toPath(contours: readonly Contour[]): Path {
@@ -80,6 +74,7 @@ export function buildFont(strokesByChar: ReadonlyMap<string, readonly Stroke[]>,
       new Glyph({
         name: glyphName(char),
         unicode: char.codePointAt(0) ?? 0,
+        unicodes: codePoints(char),
         advanceWidth: outline.advanceWidth,
         path: toPath(outline.contours),
       }),

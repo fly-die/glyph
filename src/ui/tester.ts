@@ -3,7 +3,7 @@ import { buildFont } from '../font/build';
 import type { Project } from '../state/project';
 import { el, stepSection } from './dom';
 
-const DEFAULT_SAMPLE = 'The quick brown fox jumps over the lazy dog 0123456789';
+const DEFAULT_SAMPLE = 'The quick brown fox jumps over the lazy dog. "Really?" (Yes!) 0123456789 & @';
 const REBUILD_DELAY_MS = 200;
 
 /**
