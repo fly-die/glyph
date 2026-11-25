@@ -1,12 +1,15 @@
 export type CellSize = 'regular' | 'large';
+/** 'system' follows the visitor's device until they choose for themselves. */
+export type Theme = 'system' | 'light' | 'dark';
 
-/** How the draw grid is shown. Kept apart from the project: it is not part of the font. */
+/** How the page is shown. Kept apart from the project: it is not part of the font. */
 export interface SettingsData {
   guideLetters: boolean;
   cellSize: CellSize;
+  theme: Theme;
 }
 
-export const DEFAULT_SETTINGS: SettingsData = { guideLetters: true, cellSize: 'regular' };
+export const DEFAULT_SETTINGS: SettingsData = { guideLetters: true, cellSize: 'regular', theme: 'system' };
 
 const STORAGE_KEY = 'glyph.settings.v1';
 
@@ -22,6 +25,7 @@ export function parseSettings(json: string | null): SettingsData {
   return {
     guideLetters: typeof data.guideLetters === 'boolean' ? data.guideLetters : DEFAULT_SETTINGS.guideLetters,
     cellSize: data.cellSize === 'large' || data.cellSize === 'regular' ? data.cellSize : DEFAULT_SETTINGS.cellSize,
+    theme: data.theme === 'light' || data.theme === 'dark' ? data.theme : DEFAULT_SETTINGS.theme,
   };
 }
 

@@ -32,7 +32,8 @@ body::before {
   z-index: 1;
   background-image: var(--grain);
   opacity: var(--grain-opacity);
-  mix-blend-mode: multiply;
+  mix-blend-mode: var(--grain-blend);
+  filter: var(--grain-filter);
   pointer-events: none;
 }
 
@@ -63,6 +64,7 @@ a:hover {
 .page__footer {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   justify-content: space-between;
   gap: var(--space-2) var(--space-6);
   padding: var(--space-4) 0;
@@ -76,7 +78,15 @@ a:hover {
 }
 
 .page__meta {
+  /* Sits in the middle on wide screens, makes room for the switch on narrow ones. */
+  margin: 0 auto;
   color: var(--color-text-muted);
+}
+
+@media (max-width: 40rem) {
+  .page__meta {
+    display: none;
+  }
 }
 
 .wordmark {

@@ -51,4 +51,36 @@
 
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.08 0 0 0 0 0.08 0 0 0 0 0.07 0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
   --grain-opacity: 0.22;
+  --grain-blend: multiply;
+  --grain-filter: none;
+
+  color-scheme: light;
+}
+
+/*
+ * Dark theme: the ink has been spilled over the page. The ground is ink, the
+ * writing is the colour of the paper, and the chocolate lightens to tan so it
+ * still reads as the second colour. Only the raw colours swap, every role
+ * above keeps pointing at the same name.
+ */
+:root[data-theme='dark'] {
+  --color-bone: #171614;
+  --color-ecru: #1c1a18;
+  --color-paper: #211f1c;
+  --color-concrete: #5e5b55;
+  --color-steel: #8b8881;
+  --color-ink: #ece7dc;
+  --color-ink-soft: #b3aea3;
+  --color-chocolate: #d6ad88;
+
+  --color-rule: rgb(236 231 220 / 0.3);
+  --color-guide: rgb(236 231 220 / 0.34);
+  --color-ghost: rgb(236 231 220 / 0.11);
+
+  /* The same grain, turned light so it shows on a dark ground. */
+  --grain-opacity: 0.07;
+  --grain-blend: screen;
+  --grain-filter: invert(1);
+
+  color-scheme: dark;
 }

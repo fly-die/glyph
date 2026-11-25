@@ -8,13 +8,15 @@ import { mountExport } from './ui/export';
 import { mountLiveFont } from './ui/live-font';
 import { mountShell } from './ui/shell';
 import { mountTester } from './ui/tester';
+import { mountTheme } from './ui/theme';
 
 const root = document.querySelector<HTMLElement>('#app');
 if (!root) throw new Error('Missing #app element');
 
 const project = loadPersistedProject();
 const settings = loadPersistedSettings();
-const main = mountShell(root);
+mountTheme(settings);
+const main = mountShell(root, settings);
 mountLiveFont(project);
 mountGrid(main, project, settings, 1);
 const tester = mountTester(main, 2);
