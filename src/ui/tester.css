@@ -25,7 +25,7 @@
   border-radius: 0;
   background: var(--color-surface);
   color: var(--color-text);
-  font-family: var(--font-text);
+  font-family: var(--font-user), var(--font-text);
   line-height: 1.25;
   resize: vertical;
 }

@@ -1,16 +1,10 @@
 import './tester.css';
-import { buildFont } from '../font/build';
-import type { Project } from '../state/project';
 import { el, stepSection } from './dom';
 
 const DEFAULT_SAMPLE = 'The quick brown fox jumps over the lazy dog. "Really?" (Yes!) 0123456789 & @';
-const REBUILD_DELAY_MS = 200;
 
-/**
- * The test step: the font is rebuilt as you draw and loaded through the
- * FontFace API, so the sample text is set in the real font, not a preview.
- */
-export function mountTester(parent: HTMLElement, project: Project, step: number): void {
+/** The test step: sample text set in the live font, at a size you choose. */
+export function mountTester(parent: HTMLElement, step: number): void {
   const section = stepSection(
     step,
     'Test',
@@ -53,38 +47,5 @@ export function mountTester(parent: HTMLElement, project: Project, step: number)
   size.addEventListener('input', applySize);
   applySize();
 
-  let current: FontFace | null = null;
-  let generation = 0;
-  const rebuild = async (): Promise<void> => {
-    const run = ++generation;
-    if (project.drawnCount() === 0) {
-      if (current) document.fonts.delete(current);
-      current = null;
-      sample.style.fontFamily = '';
-      return;
-    }
-    // A fresh family name per build makes the browser drop the previous face.
-    const family = `glyph-preview-${run}`;
-    const face = new FontFace(family, buildFont(project.allStrokes(), project.familyName).toArrayBuffer());
-    try {
-      await face.load();
-    } catch {
-      // The browser rejected the font. Keep showing the last one that worked.
-      return;
-    }
-    if (run !== generation) return;
-    document.fonts.add(face);
-    if (current) document.fonts.delete(current);
-    current = face;
-    sample.style.fontFamily = `"${family}", var(--font-text)`;
-  };
-
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  project.subscribe((char) => {
-    if (char === null) return;
-    clearTimeout(timer);
-    timer = setTimeout(() => void rebuild(), REBUILD_DELAY_MS);
-  });
-  void rebuild();
   parent.append(section);
 }

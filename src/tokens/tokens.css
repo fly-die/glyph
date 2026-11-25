@@ -24,6 +24,8 @@
 
   --font-text: 'Hanken Grotesk Variable', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   --font-display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  /* The font being drawn. A name no font has until the first glyph exists. */
+  --font-user: 'glyph-none';
 
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
