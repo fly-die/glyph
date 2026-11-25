@@ -8,6 +8,7 @@ import {
   UNITS_PER_EM,
 } from '../glyphs/metrics';
 import { toFontUnits } from '../glyphs/normalize';
+import { sideBearing } from '../glyphs/spacing';
 import { strokesToContours, type Contour, type Stroke } from '../outline';
 
 export const DEFAULT_FAMILY_NAME = 'My Hand';
@@ -60,14 +61,16 @@ function notdefGlyph(): Glyph {
 
 /**
  * Builds an OpenType font from the drawn strokes. Characters without strokes
- * are left out. The space is as wide as the 'n'.
+ * are left out. The space is as wide as the 'n'. Side bearings follow the
+ * stroke weight of the whole font.
  */
 export function buildFont(strokesByChar: ReadonlyMap<string, readonly Stroke[]>, familyName: string): Font {
   const glyphs: Glyph[] = [];
   let spaceWidth = FALLBACK_SPACE_WIDTH;
+  const bearing = sideBearing(strokesByChar);
 
   for (const char of CHARSET) {
-    const outline = toFontUnits(strokesToContours(strokesByChar.get(char) ?? [], PEN_WIDTH));
+    const outline = toFontUnits(strokesToContours(strokesByChar.get(char) ?? [], PEN_WIDTH), bearing);
     if (!outline) continue;
     if (char === 'n') spaceWidth = outline.advanceWidth;
     glyphs.push(

@@ -3,14 +3,14 @@ import { describe, expect, it } from 'vitest';
 import type { Stroke } from '../outline';
 import { buildFont, fontFileName, sanitizeFamilyName } from './build';
 
-function stroke(points: [number, number][]): Stroke {
+function stroke(points: [number, number][], pressure = 0.5): Stroke {
   return points.flatMap(([x, y], index) => {
     const next = points[index + 1];
-    if (!next) return [{ x, y, pressure: 0.5 }];
+    if (!next) return [{ x, y, pressure }];
     return Array.from({ length: 10 }, (_, step) => ({
       x: x + ((next[0] - x) * step) / 10,
       y: y + ((next[1] - y) * step) / 10,
-      pressure: 0.5,
+      pressure,
     }));
   });
 }
@@ -65,13 +65,26 @@ describe('buildFont', () => {
   it('places outlines on the baseline with side bearings around the ink', () => {
     const glyph = roundTrip({ n: N }).charToGlyph('n');
     const box = glyph.getBoundingBox();
-    expect(box.x1).toBeCloseTo(50, -1);
-    expect(glyph.advanceWidth).toBeCloseTo(box.x2 + 50, -1);
+    // Nominal pressure: a 75 unit stem, so 0.6 x 75 = 45 units on each side.
+    expect(Math.abs(box.x1 - 45)).toBeLessThanOrEqual(3);
+    expect(Math.abs((glyph.advanceWidth ?? 0) - (box.x2 + 45))).toBeLessThanOrEqual(3);
     // Drawn between the guides: from just under the baseline to just over the x-height.
     expect(box.y1).toBeLessThan(0);
     expect(box.y1).toBeGreaterThan(-60);
     expect(box.y2).toBeGreaterThan(500);
     expect(box.y2).toBeLessThan(560);
+  });
+
+  it('gives heavier writing wider side bearings, the same for every glyph', () => {
+    const sevenAt = (pressure: number) => [stroke([[40, 30], [120, 30], [70, 160]], pressure)];
+    const light = roundTrip({ 7: sevenAt(0.2), A }).charToGlyph('7').getBoundingBox().x1;
+    const heavyA = A.map((s) => s.map((p) => ({ ...p, pressure: 1 })));
+    const heavy = roundTrip({ 7: sevenAt(1), A: heavyA }).charToGlyph('7').getBoundingBox().x1;
+    expect(heavy).toBeGreaterThan(light + 10);
+
+    const mixed = roundTrip({ 7: sevenAt(1), A });
+    const leftEdge = (char: string) => mixed.charToGlyph(char).getBoundingBox().x1;
+    expect(Math.abs(leftEdge('7') - leftEdge('A'))).toBeLessThanOrEqual(3);
   });
 
   it('keeps the capital taller than the lowercase letter', () => {

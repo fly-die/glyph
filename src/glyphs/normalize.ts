@@ -1,5 +1,5 @@
 import type { Contour, CubicSegment, Point } from '../outline';
-import { CELL, SIDE_BEARING, UNITS_PER_CELL_PIXEL } from './metrics';
+import { CELL, UNITS_PER_CELL_PIXEL } from './metrics';
 
 export interface FontGlyphOutline {
   contours: Contour[];
@@ -49,10 +49,10 @@ function reverse(contour: Contour): Contour {
 
 /**
  * Moves cell-space contours into font units: y up from the baseline, the scale
- * set by the guides, the leftmost ink at the left side bearing. Contours are
+ * set by the guides, the leftmost ink at `sideBearing` (font units). Contours are
  * wound counter-clockwise, the direction CFF outlines expect.
  */
-export function toFontUnits(contours: readonly Contour[]): FontGlyphOutline | null {
+export function toFontUnits(contours: readonly Contour[], sideBearing: number): FontGlyphOutline | null {
   if (contours.length === 0) return null;
   const scaled = contours.map((contour) => mapContour(contour, toUnits));
 
@@ -65,13 +65,13 @@ export function toFontUnits(contours: readonly Contour[]): FontGlyphOutline | nu
     }
   }
 
-  const shift = SIDE_BEARING - xMin;
+  const shift = sideBearing - xMin;
   const place = (point: Point): Point => ({ x: Math.round(point.x + shift), y: Math.round(point.y) });
   return {
     contours: scaled.map((contour) => {
       const placed = mapContour(contour, place);
       return signedArea(placed) < 0 ? reverse(placed) : placed;
     }),
-    advanceWidth: Math.round(xMax - xMin) + SIDE_BEARING * 2,
+    advanceWidth: Math.round(xMax - xMin) + sideBearing * 2,
   };
 }

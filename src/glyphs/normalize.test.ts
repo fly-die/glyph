@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { strokesToContours, type Contour, type Stroke } from '../outline';
-import { CELL, PEN_WIDTH, SIDE_BEARING } from './metrics';
+import { CELL, PEN_WIDTH } from './metrics';
+
+const SIDE_BEARING = 50;
 import { toFontUnits } from './normalize';
 
 function vertical(x: number, fromY: number, toY: number): Stroke {
@@ -35,7 +37,7 @@ describe('toFontUnits', () => {
   it('puts the baseline guide at 0 and the x-height guide at 500 units', () => {
     // The pen centre runs from guide to guide, so the ink overshoots by half a pen width.
     const stem = strokesToContours([vertical(100, CELL.xHeight, CELL.baseline)], PEN_WIDTH);
-    const glyph = toFontUnits(stem);
+    const glyph = toFontUnits(stem, SIDE_BEARING);
     expect(glyph).not.toBeNull();
     if (!glyph) return;
     const overshoot = (PEN_WIDTH / 2) * 6.25;
@@ -45,8 +47,8 @@ describe('toFontUnits', () => {
   });
 
   it('keeps relative sizes: a stroke twice as tall stays twice as tall', () => {
-    const short = toFontUnits(strokesToContours([vertical(60, 120, 160)], PEN_WIDTH));
-    const tall = toFontUnits(strokesToContours([vertical(60, 80, 160)], PEN_WIDTH));
+    const short = toFontUnits(strokesToContours([vertical(60, 120, 160)], PEN_WIDTH), SIDE_BEARING);
+    const tall = toFontUnits(strokesToContours([vertical(60, 80, 160)], PEN_WIDTH), SIDE_BEARING);
     if (!short || !tall) throw new Error('expected outlines');
     const shortHeight = yRange(short.contours).yMax - yRange(short.contours).yMin;
     const tallHeight = yRange(tall.contours).yMax - yRange(tall.contours).yMin;
@@ -54,8 +56,8 @@ describe('toFontUnits', () => {
   });
 
   it('starts the ink at the side bearing wherever it was drawn in the cell', () => {
-    const left = toFontUnits(strokesToContours([vertical(30, 80, 160)], PEN_WIDTH));
-    const right = toFontUnits(strokesToContours([vertical(170, 80, 160)], PEN_WIDTH));
+    const left = toFontUnits(strokesToContours([vertical(30, 80, 160)], PEN_WIDTH), SIDE_BEARING);
+    const right = toFontUnits(strokesToContours([vertical(170, 80, 160)], PEN_WIDTH), SIDE_BEARING);
     if (!left || !right) throw new Error('expected outlines');
     expect(yRange(left.contours).xMin).toBe(SIDE_BEARING);
     expect(yRange(right.contours).xMin).toBe(SIDE_BEARING);
@@ -67,6 +69,7 @@ describe('toFontUnits', () => {
   it('winds every contour counter-clockwise and uses whole units', () => {
     const glyph = toFontUnits(
       strokesToContours([vertical(50, 80, 160), vertical(90, 160, 80)], PEN_WIDTH),
+      SIDE_BEARING,
     );
     if (!glyph) throw new Error('expected outline');
     expect(glyph.contours).toHaveLength(2);
@@ -77,6 +80,6 @@ describe('toFontUnits', () => {
   });
 
   it('returns nothing for a glyph without strokes', () => {
-    expect(toFontUnits([])).toBeNull();
+    expect(toFontUnits([], SIDE_BEARING)).toBeNull();
   });
 });

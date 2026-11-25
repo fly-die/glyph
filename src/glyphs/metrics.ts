@@ -24,8 +24,11 @@ export const DESCENDER = -Math.round((CELL.height - CELL.baseline) * UNITS_PER_C
 /** Nominal pen width in cell pixels, at pressure 0.5. */
 export const PEN_WIDTH = 12;
 
-/** White space on each side of a glyph, in font units. */
-export const SIDE_BEARING = 50;
+/**
+ * White space on each side of a glyph as a share of the font's stem width.
+ * Heavier writing gets more room, so the colour of a line stays even.
+ */
+export const SIDE_BEARING_PER_STEM = 0.6;
 
 /** Width of the space when no 'n' has been drawn yet. */
 export const FALLBACK_SPACE_WIDTH = 320;
