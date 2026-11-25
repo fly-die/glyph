@@ -1,0 +1,4 @@
+/* Self-hosted: the font files are bundled with the app, nothing is fetched from a CDN. */
+@import '@fontsource-variable/hanken-grotesk/index.css';
+@import '@fontsource/barlow-condensed/500.css';
+@import '@fontsource/barlow-condensed/600.css';
