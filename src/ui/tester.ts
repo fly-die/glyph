@@ -1,10 +1,24 @@
 import './tester.css';
-import { el, stepSection } from './dom';
+import { CHAR_GROUPS } from '../glyphs/charset';
+import { el, stepSection, stepTitleId } from './dom';
 
 const DEFAULT_SAMPLE = 'The quick brown fox jumps over the lazy dog. "Really?" (Yes!) 0123456789 & @';
 
+/** Ready-made texts: one to read, one that shows every glyph the font can have. */
+const SAMPLES: readonly { label: string; text: string }[] = [
+  { label: 'Pangram', text: DEFAULT_SAMPLE },
+  { label: 'Every character', text: CHAR_GROUPS.map((group) => group.chars.join(' ')).join('\n') },
+];
+
 /** The test step: sample text set in the live font, at a size you choose. */
-export function mountTester(parent: HTMLElement, step: number): void {
+export interface TesterView {
+  section: HTMLElement;
+  /** Id of the step heading, for links that jump to the tester. */
+  titleId: string;
+  sample: HTMLTextAreaElement;
+}
+
+export function mountTester(parent: HTMLElement, step: number): TesterView {
   const section = stepSection(
     step,
     'Test',
@@ -29,12 +43,25 @@ export function mountTester(parent: HTMLElement, step: number): void {
   });
   const sizeValue = el('output', { class: 'tester__size-value', for: 'tester-size' });
 
+  const samples = SAMPLES.map(({ label, text }) => {
+    const button = el('button', { class: 'text-button', type: 'button' }, [label]);
+    button.addEventListener('click', () => {
+      sample.value = text;
+      // Tells everything that mirrors the sample text, as typing would.
+      sample.dispatchEvent(new Event('input'));
+    });
+    return button;
+  });
+
   section.append(
     el('div', { class: 'tester' }, [
-      el('div', { class: 'field field--inline' }, [
-        el('label', { class: 'field__label', for: 'tester-size' }, ['Size']),
-        size,
-        sizeValue,
+      el('div', { class: 'tester__bar' }, [
+        el('div', { class: 'field field--inline' }, [
+          el('label', { class: 'field__label', for: 'tester-size' }, ['Size']),
+          size,
+          sizeValue,
+        ]),
+        el('div', { class: 'tester__samples' }, samples),
       ]),
       sample,
     ]),
@@ -48,4 +75,5 @@ export function mountTester(parent: HTMLElement, step: number): void {
   applySize();
 
   parent.append(section);
+  return { section, titleId: stepTitleId('Test'), sample };
 }

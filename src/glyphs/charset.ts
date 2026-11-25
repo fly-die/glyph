@@ -52,3 +52,12 @@ export function glyphName(char: string): string {
 export function codePoints(char: string): number[] {
   return [char.codePointAt(0) ?? 0, ...(EXTRA_CODE_POINTS[char] ?? [])];
 }
+
+const CELL_BY_CODE_POINT = new Map<number, string>(
+  CHARSET.flatMap((char) => codePoints(char).map((code): [number, string] => [code, char])),
+);
+
+/** The cell whose drawing a typed character shows, or null when no cell covers it. */
+export function cellFor(char: string): string | null {
+  return CELL_BY_CODE_POINT.get(char.codePointAt(0) ?? -1) ?? null;
+}

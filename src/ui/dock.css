@@ -1,0 +1,64 @@
+/* Live preview strip */
+
+.dock {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  /* Above the page, below the paper grain. */
+  z-index: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--page-gutter);
+  padding-bottom: max(var(--space-2), env(safe-area-inset-bottom));
+  border-top: var(--rule) solid var(--color-rule-strong);
+  background: var(--color-surface);
+  transform: translateY(100%);
+  visibility: hidden;
+  transition:
+    transform 180ms ease-out,
+    visibility 0s linear 180ms;
+}
+
+.dock--visible {
+  transform: none;
+  visibility: visible;
+  transition: transform 180ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dock,
+  .dock--visible {
+    transition: none;
+  }
+}
+
+.dock__count,
+.dock__link {
+  flex: none;
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.dock__count {
+  color: var(--color-text-muted);
+}
+
+.dock__line {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--font-user), var(--font-text);
+  font-size: 1.75rem;
+  line-height: 2.75rem;
+  white-space: nowrap;
+  /* The line runs off the edge instead of ending in a hard cut. */
+  mask-image: linear-gradient(to right, #000 calc(100% - 3rem), transparent);
+}
+
+.dock__missing {
+  color: var(--color-concrete);
+  font-family: var(--font-text);
+}

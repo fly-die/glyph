@@ -13,8 +13,12 @@ export function el<K extends keyof HTMLElementTagNameMap>(
 }
 
 /** A numbered step of the process sheet: big numeral, title, a line of guidance. */
+export function stepTitleId(title: string): string {
+  return `step-${title.toLowerCase()}`;
+}
+
 export function stepSection(step: number, title: string, lead: string): HTMLElement {
-  const id = `step-${title.toLowerCase()}`;
+  const id = stepTitleId(title);
   return el('section', { class: 'step', 'aria-labelledby': id }, [
     el('header', { class: 'step__head' }, [
       el('span', { class: 'step__numeral', 'aria-hidden': 'true' }, [String(step).padStart(2, '0')]),

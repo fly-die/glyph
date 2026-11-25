@@ -8,6 +8,12 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
 body {
   margin: 0;
   background: var(--color-ground);
@@ -100,6 +106,7 @@ a:hover {
 /* Steps of the process sheet */
 
 .step {
+  scroll-margin-top: var(--space-4);
   margin-top: var(--space-16);
   padding-top: var(--space-4);
   border-top: var(--rule) solid var(--color-rule-strong);
@@ -144,6 +151,12 @@ a:hover {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--color-text-muted);
+}
+
+/* For status lines that carry file names, which must keep their case. */
+.step__status--plain {
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 /* Fields and buttons */
