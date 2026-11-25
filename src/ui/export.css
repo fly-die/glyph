@@ -1,0 +1,14 @@
+/* Export */
+
+.export {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+}
+
+.export .field {
+  flex: 1 1 16rem;
+  max-width: 24rem;
+}
