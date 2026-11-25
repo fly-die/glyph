@@ -30,6 +30,42 @@ function sizeControl(settings: Settings): HTMLElement {
   ]);
 }
 
+/**
+ * Clears every drawing. The first click only asks, in place, so a slip of the
+ * finger does not cost a whole alphabet.
+ */
+function clearAllControl(project: Project): HTMLElement {
+  const clear = el('button', { class: 'text-button', type: 'button' });
+  const cancel = el('button', { class: 'text-button', type: 'button' }, ['Keep them']);
+  let asking = false;
+
+  const update = (): void => {
+    const drawn = project.drawnCount();
+    if (drawn === 0) asking = false;
+    clear.disabled = drawn === 0;
+    clear.textContent = asking ? `Clear all ${drawn} drawings?` : 'Clear all';
+    clear.classList.toggle('text-button--danger', asking);
+    cancel.hidden = !asking;
+  };
+  clear.addEventListener('click', () => {
+    if (asking) {
+      asking = false;
+      project.reset();
+    } else {
+      asking = true;
+    }
+    update();
+  });
+  cancel.addEventListener('click', () => {
+    asking = false;
+    update();
+    clear.focus();
+  });
+  project.subscribe(update);
+  update();
+  return el('span', { class: 'clear-all' }, [clear, cancel]);
+}
+
 /** The draw step: one cell per glyph, grouped as on a type specimen. */
 export function mountGrid(parent: HTMLElement, project: Project, settings: Settings, step: number): void {
   const section = stepSection(
@@ -41,13 +77,24 @@ export function mountGrid(parent: HTMLElement, project: Project, settings: Setti
   section.append(
     el('div', { class: 'draw-bar' }, [
       count,
-      el('div', { class: 'draw-bar__controls' }, [guideToggle(settings), sizeControl(settings)]),
+      el('div', { class: 'draw-bar__controls' }, [
+        guideToggle(settings),
+        sizeControl(settings),
+        clearAllControl(project),
+      ]),
     ]),
   );
 
+  const groupCounts: (() => void)[] = [];
   for (const group of CHAR_GROUPS) {
+    const groupCount = el('span', { class: 'group__count' });
+    groupCounts.push(() => {
+      const drawn = group.chars.filter((char) => project.strokesOf(char).length > 0).length;
+      groupCount.textContent = `${drawn} / ${group.chars.length}`;
+      groupCount.classList.toggle('group__count--done', drawn === group.chars.length);
+    });
     section.append(
-      el('h3', { class: 'group__title' }, [group.title]),
+      el('h3', { class: 'group__title' }, [group.title, groupCount]),
       el(
         'div',
         { class: 'grid' },
@@ -58,6 +105,7 @@ export function mountGrid(parent: HTMLElement, project: Project, settings: Setti
 
   const update = (): void => {
     count.textContent = `${project.drawnCount()} of ${CHARSET.length} drawn`;
+    for (const updateGroup of groupCounts) updateGroup();
   };
   const applySize = (): void => {
     section.dataset.cellSize = settings.value.cellSize;

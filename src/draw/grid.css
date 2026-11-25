@@ -83,6 +83,10 @@
 }
 
 .group__title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
   margin: var(--space-8) 0 var(--space-3);
   padding-bottom: var(--space-2);
   border-bottom: var(--rule) solid var(--color-rule);
@@ -90,6 +94,22 @@
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.group__count {
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+}
+
+.group__count--done {
+  color: var(--color-accent);
+}
+
+.clear-all {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
 }
 
 .grid {

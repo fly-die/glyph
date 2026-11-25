@@ -61,6 +61,13 @@ export class Project {
     this.emit(char);
   }
 
+  /** Removes every drawing. The family name stays. */
+  reset(): void {
+    const drawn = [...this.strokes.keys()];
+    this.strokes.clear();
+    for (const char of drawn) this.emit(char);
+  }
+
   /** Calls `listener` with the changed character, or null when the name changed. */
   subscribe(listener: Listener): () => void {
     this.listeners.add(listener);

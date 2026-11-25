@@ -212,3 +212,35 @@ a:hover {
   color: var(--color-steel);
   cursor: default;
 }
+
+.text-button {
+  min-height: 2rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: var(--rule);
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+.text-button:hover:not(:disabled),
+.text-button--danger {
+  color: var(--color-accent);
+}
+
+.text-button--danger {
+  font-weight: 600;
+}
+
+.text-button:disabled {
+  color: var(--color-steel);
+  text-decoration: none;
+  cursor: default;
+}
+
+[hidden] {
+  display: none !important;
+}

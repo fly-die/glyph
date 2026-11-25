@@ -21,6 +21,16 @@ describe('Project', () => {
     expect(project.drawnCount()).toBe(1);
   });
 
+  it('resets every glyph, tells subscribers which ones and keeps the family name', () => {
+    const project = new Project({ familyName: 'Flynn Hand', strokes: { a: [first], b: [second] } });
+    const changed: (string | null)[] = [];
+    project.subscribe((char) => changed.push(char));
+    project.reset();
+    expect(project.drawnCount()).toBe(0);
+    expect(changed).toEqual(['a', 'b']);
+    expect(project.familyName).toBe('Flynn Hand');
+  });
+
   it('clears one glyph and leaves the others alone', () => {
     const project = new Project();
     project.addStroke('a', first);
