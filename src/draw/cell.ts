@@ -1,6 +1,7 @@
 import { CELL, PEN_WIDTH } from '../glyphs/metrics';
 import { strokeToContour, type Stroke, type StrokePoint } from '../outline';
 import type { Project } from '../state/project';
+import type { Settings } from '../state/settings';
 import { readToken } from '../tokens/read';
 import { el } from '../ui/dom';
 
@@ -35,6 +36,35 @@ function drawGuides(context: CanvasRenderingContext2D): void {
   context.stroke();
 }
 
+const GUIDE_FONT = '"Hanken Grotesk Variable"';
+let guideFontSize: number | null = null;
+let guideFontReady: Promise<void> | null = null;
+
+/**
+ * Loads the typeface of the guide letters and works out the size at which its
+ * x-height spans the distance between the two guides.
+ */
+function loadGuideFont(): Promise<void> {
+  guideFontReady ??= document.fonts.load(`300 100px ${GUIDE_FONT}`).then(() => {
+    const context = document.createElement('canvas').getContext('2d');
+    if (!context) return;
+    context.font = `300 100px ${GUIDE_FONT}`;
+    const xHeight = context.measureText('x').actualBoundingBoxAscent;
+    if (xHeight > 0) guideFontSize = ((CELL.baseline - CELL.xHeight) / xHeight) * 100;
+  });
+  return guideFontReady;
+}
+
+/** A faint printed letter that shows where the glyph sits and how tall it is. */
+function drawGuideLetter(context: CanvasRenderingContext2D, char: string): void {
+  if (guideFontSize === null) return;
+  context.font = `300 ${guideFontSize}px ${GUIDE_FONT}`;
+  context.textAlign = 'center';
+  context.textBaseline = 'alphabetic';
+  context.fillStyle = readToken('--color-ghost');
+  context.fillText(char, CELL.width / 2, CELL.baseline);
+}
+
 function fillStroke(context: CanvasRenderingContext2D, stroke: Stroke): void {
   const contour = strokeToContour(stroke, PEN_WIDTH);
   if (!contour) return;
@@ -50,9 +80,9 @@ function fillStroke(context: CanvasRenderingContext2D, stroke: Stroke): void {
 /**
  * One drawing cell: a canvas with baseline and x-height guides that records
  * pointer strokes, plus undo and clear. The canvas shows the same outlines
- * that go into the font.
+ * that go into the font. An empty cell can show a faint guide letter.
  */
-export function createCell(char: string, project: Project): HTMLElement {
+export function createCell(char: string, project: Project, settings: Settings): HTMLElement {
   const canvas = el('canvas', {
     class: 'cell__canvas',
     width: String(CELL.width * RESOLUTION),
@@ -82,6 +112,7 @@ export function createCell(char: string, project: Project): HTMLElement {
     context.setTransform(RESOLUTION, 0, 0, RESOLUTION, 0, 0);
     context.clearRect(0, 0, CELL.width, CELL.height);
     drawGuides(context);
+    if (strokes.length === 0 && !active && settings.value.guideLetters) drawGuideLetter(context, char);
     context.fillStyle = readToken('--color-ink');
     for (const stroke of strokes) fillStroke(context, stroke);
     if (active) fillStroke(context, active.stroke);
@@ -126,6 +157,9 @@ export function createCell(char: string, project: Project): HTMLElement {
   project.subscribe((changed) => {
     if (changed === char) render();
   });
+
+  settings.subscribe(render);
+  loadGuideFont().then(render, () => undefined);
 
   render();
   return cell;

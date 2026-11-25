@@ -1,5 +1,87 @@
 /* Draw grid */
 
+.draw-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-6);
+  margin-top: var(--space-6);
+}
+
+.draw-bar .step__status {
+  margin: 0;
+}
+
+.draw-bar__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-6);
+  font-size: var(--text-sm);
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2rem;
+  cursor: pointer;
+}
+
+.check input {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  accent-color: var(--color-ink);
+}
+
+.segmented {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.segmented__options {
+  display: inline-flex;
+  border: var(--rule) solid var(--color-rule-strong);
+}
+
+.segmented__option {
+  position: relative;
+  cursor: pointer;
+}
+
+.segmented__option input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.segmented__option span {
+  display: block;
+  padding: 0 var(--space-3);
+  line-height: 1.875rem;
+}
+
+.segmented__option input:checked + span {
+  background: var(--color-ink);
+  color: var(--color-bone);
+}
+
+.segmented__option input:focus-visible + span {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+[data-cell-size='large'] .grid {
+  --cell-min: 13rem;
+}
+
 .group__title {
   margin: var(--space-8) 0 var(--space-3);
   padding-bottom: var(--space-2);
@@ -12,7 +94,7 @@
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(var(--cell-min, 8.5rem), 1fr));
   gap: var(--space-3);
 }
 
@@ -43,6 +125,11 @@
 .cell__actions {
   display: flex;
   gap: var(--space-1);
+}
+
+/* An empty cell has nothing to undo or clear, so its actions stay out of the way. */
+.cell:not(.cell--drawn) .cell__actions {
+  visibility: hidden;
 }
 
 .cell__button {

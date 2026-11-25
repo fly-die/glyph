@@ -21,6 +21,7 @@
   --color-rule: rgb(20 20 18 / 0.28);
   --color-rule-strong: var(--color-ink);
   --color-guide: rgb(20 20 18 / 0.3);
+  --color-ghost: rgb(20 20 18 / 0.1);
 
   --font-text: 'Hanken Grotesk Variable', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   --font-display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
