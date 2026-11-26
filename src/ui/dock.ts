@@ -35,7 +35,7 @@ export function mountDock(root: HTMLElement, project: Project, tester: TesterVie
     line.replaceChildren(
       ...[...text].slice(0, MAX_CHARS).map((char) => {
         const cell = cellFor(char);
-        const inFont = char === ' ' || (cell !== null && project.strokesOf(cell).length > 0);
+        const inFont = char === ' ' || (cell !== null && project.hasGlyph(cell));
         return inFont ? char : el('span', { class: 'dock__missing' }, [char]);
       }),
     );

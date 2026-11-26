@@ -1,4 +1,4 @@
-import { buildFontFile } from '../font/build';
+import { buildFont } from '../font/build';
 import type { Project } from '../state/project';
 
 const REBUILD_DELAY_MS = 200;
@@ -11,7 +11,16 @@ const PROPERTY = '--font-user';
  * the real font, not a preview. Characters that are not drawn yet fall
  * through to the next family in the list.
  */
-export function mountLiveFont(project: Project): void {
+export interface LiveFont {
+  /** Automatic spacing of the font as last built, per pair of characters. */
+  autoKerning(): ReadonlyMap<string, number>;
+  /** Called after every rebuild that loaded. */
+  subscribe(listener: () => void): void;
+}
+
+export function mountLiveFont(project: Project): LiveFont {
+  let auto: ReadonlyMap<string, number> = new Map();
+  const listeners = new Set<() => void>();
   const root = document.documentElement;
   let current: FontFace | null = null;
   let generation = 0;
@@ -26,7 +35,12 @@ export function mountLiveFont(project: Project): void {
     }
     // A fresh family name per build makes the browser drop the previous face.
     const family = `glyph-preview-${run}`;
-    const face = new FontFace(family, buildFontFile(project.allStrokes(), project.familyName));
+    const built = buildFont({
+      familyName: project.familyName,
+      glyphs: project.fontGlyphs(),
+      kerning: project.kerningOverrides(),
+    });
+    const face = new FontFace(family, built.file);
     try {
       await face.load();
     } catch {
@@ -38,13 +52,16 @@ export function mountLiveFont(project: Project): void {
     if (current) document.fonts.delete(current);
     current = face;
     root.style.setProperty(PROPERTY, `"${family}"`);
+    auto = built.autoKerning;
+    for (const listener of listeners) listener();
   };
 
   let timer: ReturnType<typeof setTimeout> | undefined;
-  project.subscribe((char) => {
-    if (char === null) return;
+  project.subscribe((change) => {
+    if (change.kind === 'name') return;
     clearTimeout(timer);
     timer = setTimeout(() => void rebuild(), REBUILD_DELAY_MS);
   });
   void rebuild();
+  return { autoKerning: () => auto, subscribe: (listener) => void listeners.add(listener) };
 }

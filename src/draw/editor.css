@@ -1,0 +1,60 @@
+/* Point editor */
+
+.editor {
+  width: min(40rem, calc(100vw - 2 * var(--page-gutter)));
+  max-height: calc(100vh - 2rem);
+  padding: var(--space-4);
+  border: var(--rule) solid var(--color-rule-strong);
+  border-radius: 0;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.editor::backdrop {
+  background: rgb(20 20 18 / 0.35);
+}
+
+.editor__bar {
+  margin: 0 0 var(--space-3);
+}
+
+.editor__label {
+  font-size: var(--text-xl);
+}
+
+.editor__canvas {
+  display: block;
+  width: 100%;
+  max-height: calc(100vh - 10rem);
+  object-fit: contain;
+  border: var(--rule) solid var(--color-rule);
+  background: var(--color-surface);
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.segmented-buttons {
+  display: inline-flex;
+  border: var(--rule) solid var(--color-rule-strong);
+}
+
+.segmented__button {
+  min-height: 2rem;
+  padding: 0 var(--space-3);
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.segmented__button[aria-pressed='true'] {
+  background: var(--color-ink);
+  color: var(--color-bone);
+}
+
+.segmented__button:disabled {
+  color: var(--color-steel);
+  cursor: default;
+}

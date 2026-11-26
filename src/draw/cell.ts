@@ -1,12 +1,11 @@
-import { CELL, PEN_WIDTH } from '../glyphs/metrics';
-import { strokeToContour, type Stroke, type StrokePoint } from '../outline';
-import type { Project } from '../state/project';
+import { CELL } from '../glyphs/metrics';
+import type { Stroke, StrokePoint } from '../outline';
+import { isFilled, MAX_VARIANTS, type Project } from '../state/project';
 import type { Settings } from '../state/settings';
-import { readToken } from '../tokens/read';
 import { el } from '../ui/dom';
+import { fillStroke, loadGuideFont, paintCell, RESOLUTION } from './paint';
+import { readToken } from '../tokens/read';
 
-/** Canvas pixels per cell pixel. Enough for a crisp cell on a retina screen. */
-const RESOLUTION = 2;
 const MOUSE_PRESSURE = 0.5;
 
 function toStrokePoint(canvas: HTMLCanvasElement, event: PointerEvent): StrokePoint {
@@ -19,70 +18,17 @@ function toStrokePoint(canvas: HTMLCanvasElement, event: PointerEvent): StrokePo
   };
 }
 
-function drawGuides(context: CanvasRenderingContext2D): void {
-  context.lineWidth = 1;
-  context.strokeStyle = readToken('--color-guide');
-  context.setLineDash([4, 4]);
-  context.beginPath();
-  context.moveTo(0, CELL.xHeight + 0.5);
-  context.lineTo(CELL.width, CELL.xHeight + 0.5);
-  context.stroke();
-
-  context.strokeStyle = readToken('--color-accent');
-  context.setLineDash([]);
-  context.beginPath();
-  context.moveTo(0, CELL.baseline + 0.5);
-  context.lineTo(CELL.width, CELL.baseline + 0.5);
-  context.stroke();
-}
-
-const GUIDE_FONT = '"Hanken Grotesk Variable"';
-let guideFontSize: number | null = null;
-let guideFontReady: Promise<void> | null = null;
-
-/**
- * Loads the typeface of the guide letters and works out the size at which its
- * x-height spans the distance between the two guides.
- */
-function loadGuideFont(): Promise<void> {
-  guideFontReady ??= document.fonts.load(`300 100px ${GUIDE_FONT}`).then(() => {
-    const context = document.createElement('canvas').getContext('2d');
-    if (!context) return;
-    context.font = `300 100px ${GUIDE_FONT}`;
-    const xHeight = context.measureText('x').actualBoundingBoxAscent;
-    if (xHeight > 0) guideFontSize = ((CELL.baseline - CELL.xHeight) / xHeight) * 100;
-  });
-  return guideFontReady;
-}
-
-/** A faint printed letter that shows where the glyph sits and how tall it is. */
-function drawGuideLetter(context: CanvasRenderingContext2D, char: string): void {
-  if (guideFontSize === null) return;
-  context.font = `300 ${guideFontSize}px ${GUIDE_FONT}`;
-  context.textAlign = 'center';
-  context.textBaseline = 'alphabetic';
-  context.fillStyle = readToken('--color-ghost');
-  context.fillText(char, CELL.width / 2, CELL.baseline);
-}
-
-function fillStroke(context: CanvasRenderingContext2D, stroke: Stroke): void {
-  const contour = strokeToContour(stroke, PEN_WIDTH);
-  if (!contour) return;
-  context.beginPath();
-  context.moveTo(contour.start.x, contour.start.y);
-  for (const { c1, c2, to } of contour.segments) {
-    context.bezierCurveTo(c1.x, c1.y, c2.x, c2.y, to.x, to.y);
-  }
-  context.closePath();
-  context.fill();
-}
+/** Opens the point editor for one version of a character. */
+export type EditGlyph = (char: string, variant: number) => void;
 
 /**
  * One drawing cell: a canvas with baseline and x-height guides that records
  * pointer strokes, plus undo and clear. The canvas shows the same outlines
- * that go into the font. An empty cell can show a faint guide letter.
+ * that go into the font. An empty cell can show a faint guide letter. Below
+ * the canvas, tabs switch between up to three versions of the character, and
+ * Edit opens the point editor.
  */
-export function createCell(char: string, project: Project, settings: Settings): HTMLElement {
+export function createCell(char: string, project: Project, settings: Settings, onEdit: EditGlyph): HTMLElement {
   const canvas = el('canvas', {
     class: 'cell__canvas',
     width: String(CELL.width * RESOLUTION),
@@ -94,40 +40,81 @@ export function createCell(char: string, project: Project, settings: Settings): 
     'Undo',
   ]);
   const clear = el('button', { class: 'cell__button', type: 'button', 'aria-label': `Clear ${char}` }, ['Clear']);
+  const paperTag = el('span', { class: 'cell__tag' }, ['from paper']);
+  const versions = el('span', { class: 'versions', role: 'group', 'aria-label': `Versions of ${char}` });
+  const edit = el('button', { class: 'cell__button', type: 'button', 'aria-label': `Edit the points of ${char}` }, [
+    'Edit',
+  ]);
   const cell = el('div', { class: 'cell' }, [
     el('div', { class: 'cell__head' }, [
-      el('span', { class: 'cell__label' }, [char]),
+      el('span', { class: 'cell__name' }, [el('span', { class: 'cell__label' }, [char]), paperTag]),
       el('span', { class: 'cell__actions' }, [undo, clear]),
     ]),
     canvas,
+    el('div', { class: 'cell__foot' }, [versions, edit]),
   ]);
 
   const context = canvas.getContext('2d');
   if (!context) return cell;
 
+  let current = 0;
   let active: { pointerId: number; stroke: Stroke } | null = null;
 
-  const render = (): void => {
-    const strokes = project.strokesOf(char);
-    context.setTransform(RESOLUTION, 0, 0, RESOLUTION, 0, 0);
-    context.clearRect(0, 0, CELL.width, CELL.height);
-    drawGuides(context);
-    if (strokes.length === 0 && !active && settings.value.guideLetters) drawGuideLetter(context, char);
-    context.fillStyle = readToken('--color-ink');
-    for (const stroke of strokes) fillStroke(context, stroke);
-    if (active) fillStroke(context, active.stroke);
+  const renderVersions = (): void => {
+    const variants = project.variantsOf(char);
+    const count = Math.max(1, variants.length);
+    const buttons: HTMLButtonElement[] = [];
+    for (let index = 0; index < count; index++) {
+      const button = el('button', {
+        class: 'versions__tab',
+        type: 'button',
+        'aria-pressed': String(index === current),
+        'aria-label': `Version ${index + 1}`,
+      }, [String(index + 1)]);
+      button.addEventListener('click', () => {
+        current = index;
+        render();
+      });
+      buttons.push(button);
+    }
+    if (count < MAX_VARIANTS && isFilled(variants[count - 1])) {
+      const add = el('button', { class: 'versions__tab', type: 'button', 'aria-label': `Add a version of ${char}` }, [
+        '+',
+      ]);
+      add.addEventListener('click', () => {
+        const index = project.addVariant(char);
+        if (index !== null) current = index;
+        render();
+      });
+      buttons.push(add);
+    }
+    versions.replaceChildren(...buttons);
+  };
 
-    const empty = strokes.length === 0;
-    undo.disabled = empty;
-    clear.disabled = empty;
-    cell.classList.toggle('cell--drawn', !empty);
+  const render = (): void => {
+    const variants = project.variantsOf(char);
+    if (current >= Math.max(1, variants.length)) current = Math.max(0, variants.length - 1);
+    const variant = variants[current] ?? { strokes: [], traced: null };
+    paintCell(context, variant, settings.value.guideLetters ? char : null);
+    if (active) {
+      context.fillStyle = readToken('--color-ink');
+      fillStroke(context, active.stroke);
+    }
+    const filled = isFilled(variant);
+    undo.disabled = variant.strokes.length === 0;
+    clear.disabled = !filled && current === 0;
+    edit.disabled = !filled;
+    paperTag.hidden = !(variant.traced && variant.strokes.length === 0);
+    cell.classList.toggle('cell--drawn', project.hasGlyph(char) || filled);
+    cell.classList.toggle('cell--versions', variants.length > 1);
+    renderVersions();
   };
 
   const finish = (event: PointerEvent): void => {
     if (!active || event.pointerId !== active.pointerId) return;
     const { stroke } = active;
     active = null;
-    project.addStroke(char, stroke);
+    project.addStroke(char, stroke, current);
   };
 
   canvas.addEventListener('pointerdown', (event) => {
@@ -152,12 +139,12 @@ export function createCell(char: string, project: Project, settings: Settings): 
   canvas.addEventListener('pointerup', finish);
   canvas.addEventListener('pointercancel', finish);
 
-  undo.addEventListener('click', () => project.undo(char));
-  clear.addEventListener('click', () => project.clear(char));
-  project.subscribe((changed) => {
-    if (changed === char) render();
+  undo.addEventListener('click', () => project.undo(char, current));
+  clear.addEventListener('click', () => project.clear(char, current));
+  edit.addEventListener('click', () => onEdit(char, current));
+  project.subscribe((change) => {
+    if (change.kind === 'glyph' && change.char === char) render();
   });
-
   settings.subscribe(render);
   loadGuideFont().then(render, () => undefined);
 

@@ -1,6 +1,9 @@
 import './tester.css';
 import { CHAR_GROUPS } from '../glyphs/charset';
+import type { Project } from '../state/project';
 import { el, stepSection, stepTitleId } from './dom';
+import type { LiveFont } from './live-font';
+import { mountSpacing } from './spacing';
 
 const DEFAULT_SAMPLE = 'The quick brown fox jumps over the lazy dog. "Really?" (Yes!) 0123456789 & @';
 
@@ -18,11 +21,11 @@ export interface TesterView {
   sample: HTMLTextAreaElement;
 }
 
-export function mountTester(parent: HTMLElement, step: number): TesterView {
+export function mountTester(parent: HTMLElement, step: number, project: Project, liveFont: LiveFont): TesterView {
   const section = stepSection(
     step,
     'Test',
-    'Type with your font. Letters you have not drawn yet show in the interface typeface.',
+    'Type with your font. Letters you have not drawn yet show in the interface typeface. Pick a pair below to fix its spacing by hand.',
   );
   const sample = el('textarea', {
     class: 'tester__sample',
@@ -74,6 +77,7 @@ export function mountTester(parent: HTMLElement, step: number): TesterView {
   size.addEventListener('input', applySize);
   applySize();
 
+  mountSpacing(section, project, liveFont, sample);
   parent.append(section);
   return { section, titleId: stepTitleId('Test'), sample };
 }

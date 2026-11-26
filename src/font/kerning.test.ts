@@ -1,7 +1,7 @@
 import { parse } from 'opentype.js';
 import { describe, expect, it } from 'vitest';
 import type { Stroke } from '../outline';
-import { buildFontFile } from './build';
+import { buildFont, buildFontFile } from './build';
 import { addTables } from './sfnt';
 
 function stroke(points: [number, number][]): Stroke {
@@ -68,5 +68,28 @@ describe('addTables', () => {
     for (let at = 0; at < patched.byteLength; at += 4) sum = (sum + view.getUint32(at)) >>> 0;
     expect(sum).toBe(0xb1b0afba);
     expect(parse(patched).getEnglishName('fontFamily')).toBe('Kern Test');
+  });
+});
+
+describe('buildFont', () => {
+  const variant = (...strokes: Stroke[]) => ({ strokes, traced: null });
+
+  it('adds the extra versions of a character as alternates without their own code point', () => {
+    const glyphs = new Map([['A', [variant(...(GLYPHS.A ?? [])), variant(...(GLYPHS.V ?? []))]], ['o', [variant(...(GLYPHS.o ?? []))]]]);
+    const parsed = parse(buildFont({ familyName: 'Versions', glyphs }).file);
+    const names = Array.from({ length: parsed.glyphs.length }, (_, index) => parsed.glyphs.get(index).name);
+    expect(names).toContain('A.alt1');
+    expect(parsed.charToGlyph('A').name).toBe('A');
+  });
+
+  it('lets spacing set by hand win over the automatic value', () => {
+    const glyphs = new Map(Object.entries(GLYPHS).map(([char, strokes]) => [char, [variant(...strokes)]]));
+    const built = buildFont({ familyName: 'Hand Set', glyphs, kerning: new Map([['AV', -5], ['no', 30]]) });
+    const parsed = parse(built.file);
+    const pair = (a: string, b: string): number => parsed.getKerningValue(parsed.charToGlyph(a), parsed.charToGlyph(b));
+    expect(built.autoKerning.get('AV')).toBeLessThan(-40);
+    expect(pair('A', 'V')).toBe(-5);
+    expect(pair('n', 'o')).toBe(30);
+    expect(pair('V', 'A')).toBe(built.autoKerning.get('VA'));
   });
 });

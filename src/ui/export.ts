@@ -1,9 +1,17 @@
 import './export.css';
-import { buildFontFile, DEFAULT_FAMILY_NAME, fontFileName, sanitizeFamilyName } from '../font/build';
+import { buildFont, DEFAULT_FAMILY_NAME, fontFileName, sanitizeFamilyName } from '../font/build';
 import { downloadFile } from '../font/download';
 import { toWoff2 } from '../font/woff2';
 import type { Project } from '../state/project';
 import { el, stepSection } from './dom';
+
+function fontFile(project: Project): ArrayBuffer {
+  return buildFont({
+    familyName: project.familyName,
+    glyphs: project.fontGlyphs(),
+    kerning: project.kerningOverrides(),
+  }).file;
+}
 
 /**
  * The export step: name the family and download the font. The .otf is for
@@ -62,7 +70,7 @@ export function mountExport(parent: HTMLElement, project: Project, step: number)
   });
   button.addEventListener('click', () => {
     const fileName = fontFileName(project.familyName);
-    downloadFile(buildFontFile(project.allStrokes(), project.familyName), fileName, 'font/otf');
+    downloadFile(fontFile(project), fileName, 'font/otf');
     note = `Downloaded ${fileName}. Open the file and choose Install.`;
     update();
   });
@@ -70,7 +78,7 @@ export function mountExport(parent: HTMLElement, project: Project, step: number)
     compressing = true;
     update();
     const fileName = fontFileName(project.familyName, 'woff2');
-    const otf = buildFontFile(project.allStrokes(), project.familyName);
+    const otf = fontFile(project);
     toWoff2(otf)
       .then((woff2) => {
         downloadFile(woff2, fileName, 'font/woff2');

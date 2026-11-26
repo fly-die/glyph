@@ -147,9 +147,61 @@
   gap: var(--space-1);
 }
 
-/* An empty cell has nothing to undo or clear, so its actions stay out of the way. */
-.cell:not(.cell--drawn) .cell__actions {
+/* An empty cell has nothing to undo, clear or edit, so its actions stay out of the way. */
+.cell:not(.cell--drawn) .cell__actions,
+.cell:not(.cell--drawn) .cell__foot {
   visibility: hidden;
+}
+
+.cell__name {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.cell__tag {
+  font-size: var(--text-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--color-accent);
+}
+
+.cell__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-1) var(--space-2);
+  border-top: var(--rule) solid var(--color-rule);
+}
+
+.versions {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.versions__tab {
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: var(--rule) solid var(--color-rule);
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.versions__tab:hover {
+  border-color: var(--color-rule-strong);
+}
+
+.versions__tab[aria-pressed='true'] {
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+  color: var(--color-bone);
 }
 
 .cell__button {

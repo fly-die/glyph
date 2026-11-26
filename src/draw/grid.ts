@@ -3,7 +3,7 @@ import { CHAR_GROUPS, CHARSET } from '../glyphs/charset';
 import type { Project } from '../state/project';
 import type { CellSize, Settings } from '../state/settings';
 import { el, stepSection } from '../ui/dom';
-import { createCell } from './cell';
+import { createCell, type EditGlyph } from './cell';
 
 const CELL_SIZES: readonly { value: CellSize; label: string }[] = [
   { value: 'regular', label: 'Regular' },
@@ -67,7 +67,13 @@ function clearAllControl(project: Project): HTMLElement {
 }
 
 /** The draw step: one cell per glyph, grouped as on a type specimen. */
-export function mountGrid(parent: HTMLElement, project: Project, settings: Settings, step: number): void {
+export function mountGrid(
+  parent: HTMLElement,
+  project: Project,
+  settings: Settings,
+  step: number,
+  onEdit: EditGlyph,
+): HTMLElement {
   const section = stepSection(
     step,
     'Draw',
@@ -89,7 +95,7 @@ export function mountGrid(parent: HTMLElement, project: Project, settings: Setti
   for (const group of CHAR_GROUPS) {
     const groupCount = el('span', { class: 'group__count' });
     groupCounts.push(() => {
-      const drawn = group.chars.filter((char) => project.strokesOf(char).length > 0).length;
+      const drawn = group.chars.filter((char) => project.hasGlyph(char)).length;
       groupCount.textContent = `${drawn} / ${group.chars.length}`;
       groupCount.classList.toggle('group__count--done', drawn === group.chars.length);
     });
@@ -98,7 +104,7 @@ export function mountGrid(parent: HTMLElement, project: Project, settings: Setti
       el(
         'div',
         { class: 'grid' },
-        group.chars.map((char) => createCell(char, project, settings)),
+        group.chars.map((char) => createCell(char, project, settings, onEdit)),
       ),
     );
   }
@@ -115,4 +121,5 @@ export function mountGrid(parent: HTMLElement, project: Project, settings: Setti
   update();
   applySize();
   parent.append(section);
+  return section;
 }
