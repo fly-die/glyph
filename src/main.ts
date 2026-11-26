@@ -1,3 +1,4 @@
+import { inject } from '@vercel/analytics';
 import './tokens/index.css';
 import './styles.css';
 import { mountGrid } from './draw/grid';
@@ -22,3 +23,6 @@ mountGrid(main, project, settings, 1);
 const tester = mountTester(main, 2);
 mountExport(main, project, 3);
 mountDock(root, project, tester);
+
+// Cookie-free page views. Only reports on the deployed site, never during development.
+inject({ mode: import.meta.env.PROD ? 'production' : 'development', debug: false });
