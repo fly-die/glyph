@@ -3,6 +3,7 @@ import { CHAR_GROUPS, CHARSET } from '../glyphs/charset';
 import type { Project } from '../state/project';
 import type { CellSize, Settings } from '../state/settings';
 import { el, stepSection } from '../ui/dom';
+import { mountPaper } from '../paper/panel';
 import { createCell, type EditGlyph } from './cell';
 
 const CELL_SIZES: readonly { value: CellSize; label: string }[] = [
@@ -79,8 +80,39 @@ export function mountGrid(
     'Draw',
     'One letter per cell. Sit letters on the solid line. Small letters reach the dashed line.',
   );
-  const count = el('p', { class: 'step__status', 'aria-live': 'polite' });
+  const lead = section.querySelector('.step__lead');
+  const DRAW_LEAD = lead?.textContent ?? '';
+  const PAPER_LEAD = 'Draw each letter here, or write them on paper and take a photo.';
+  const screen = el('div', { class: 'draw-screen' });
+  const paper = el('div', { class: 'paper', hidden: '' });
+  const modes = ([
+    ['screen', 'Draw on screen'],
+    ['paper', 'Write on paper'],
+  ] as const).map(([value, label]) => {
+    const input = el('input', { type: 'radio', name: 'draw-mode', value });
+    input.checked = value === 'screen';
+    input.addEventListener('change', () => setMode(value));
+    return el('label', { class: 'segmented__option' }, [input, el('span', {}, [label])]);
+  });
+  const setMode = (mode: 'screen' | 'paper'): void => {
+    screen.hidden = mode !== 'screen';
+    paper.hidden = mode !== 'paper';
+    for (const option of modes) {
+      const input = option.querySelector('input');
+      if (input) input.checked = input.value === mode;
+    }
+    if (lead) lead.textContent = mode === 'paper' ? PAPER_LEAD : DRAW_LEAD;
+  };
   section.append(
+    el('div', { class: 'segmented draw-mode', role: 'radiogroup', 'aria-label': 'How to make the letters' }, [
+      el('div', { class: 'segmented__options' }, modes),
+    ]),
+    screen,
+    paper,
+  );
+
+  const count = el('p', { class: 'step__status', 'aria-live': 'polite' });
+  screen.append(
     el('div', { class: 'draw-bar' }, [
       count,
       el('div', { class: 'draw-bar__controls' }, [
@@ -99,7 +131,7 @@ export function mountGrid(
       groupCount.textContent = `${drawn} / ${group.chars.length}`;
       groupCount.classList.toggle('group__count--done', drawn === group.chars.length);
     });
-    section.append(
+    screen.append(
       el('h3', { class: 'group__title' }, [group.title, groupCount]),
       el(
         'div',
@@ -116,6 +148,11 @@ export function mountGrid(
   const applySize = (): void => {
     section.dataset.cellSize = settings.value.cellSize;
   };
+  mountPaper(paper, project, (message) => {
+    setMode('screen');
+    count.textContent = message;
+    section.scrollIntoView({ block: 'start' });
+  });
   project.subscribe(update);
   settings.subscribe(applySize);
   update();

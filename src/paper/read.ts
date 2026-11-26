@@ -113,3 +113,17 @@ export function readSheet(photo: GrayImage): SheetReading | ReadError {
   }
   return { markers, toPhoto, cells, glyphs };
 }
+
+/** The whole sheet, straightened, at `pxPerMm` pixels per millimetre. For showing the step. */
+export function straightenedSheet(photo: GrayImage, toPhoto: Homography, pxPerMm: number): GrayImage {
+  const width = Math.round(SHEET.width * pxPerMm);
+  const height = Math.round(SHEET.height * pxPerMm);
+  const out = createGray(width, height);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const at = project(toPhoto, { x: (x + 0.5) / pxPerMm, y: (y + 0.5) / pxPerMm });
+      out.data[y * width + x] = sample(photo, at.x, at.y);
+    }
+  }
+  return out;
+}

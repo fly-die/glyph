@@ -104,7 +104,10 @@ export function createCell(char: string, project: Project, settings: Settings, o
     undo.disabled = variant.strokes.length === 0;
     clear.disabled = !filled && current === 0;
     edit.disabled = !filled;
-    paperTag.hidden = !(variant.traced && variant.strokes.length === 0);
+    const fromPaper = !!variant.traced && variant.strokes.length === 0;
+    paperTag.hidden = !fromPaper;
+    // A glyph from paper has no strokes to take back, so Undo makes room for the tag.
+    undo.hidden = fromPaper;
     cell.classList.toggle('cell--drawn', project.hasGlyph(char) || filled);
     cell.classList.toggle('cell--versions', variants.length > 1);
     renderVersions();

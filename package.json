@@ -13,12 +13,14 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "sheet": "tsx scripts/make-sheet.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/opentype.js": "^1.3.10",
     "eslint": "^10.15.0",
+    "tsx": "^4.23.15",
     "typescript": "~6.0",
     "typescript-eslint": "^8.73.0",
     "vite": "^8.3.8",
