@@ -48,11 +48,22 @@ function reverse(contour: Contour): Contour {
 }
 
 /**
- * Moves cell-space contours into font units: y up from the baseline, the scale
- * set by the guides, the leftmost ink at `sideBearing` (font units). Contours are
- * wound counter-clockwise, the direction CFF outlines expect.
+ * How contours are wound in the font. Drawn strokes overlap and must all add
+ * up ('union'). Traced outlines carry holes, whose direction must stay
+ * opposite to the outline around them ('nested').
  */
-export function toFontUnits(contours: readonly Contour[], sideBearing: number): FontGlyphOutline | null {
+export type Winding = 'union' | 'nested';
+
+/**
+ * Moves cell-space contours into font units: y up from the baseline, the scale
+ * set by the guides, the leftmost ink at `sideBearing` (font units). Outer
+ * contours are wound counter-clockwise, the direction CFF outlines expect.
+ */
+export function toFontUnits(
+  contours: readonly Contour[],
+  sideBearing: number,
+  winding: Winding = 'union',
+): FontGlyphOutline | null {
   if (contours.length === 0) return null;
   const scaled = contours.map((contour) => mapContour(contour, toUnits));
 
@@ -67,11 +78,17 @@ export function toFontUnits(contours: readonly Contour[], sideBearing: number): 
 
   const shift = sideBearing - xMin;
   const place = (point: Point): Point => ({ x: Math.round(point.x + shift), y: Math.round(point.y) });
+  const placed = scaled.map((contour) => mapContour(contour, place));
+  let oriented: Contour[];
+  if (winding === 'union') {
+    oriented = placed.map((contour) => (signedArea(contour) < 0 ? reverse(contour) : contour));
+  } else {
+    // The largest contour is an outer one. Turn all of them together so it runs counter-clockwise.
+    const largest = placed.reduce((a, b) => (Math.abs(signedArea(b)) > Math.abs(signedArea(a)) ? b : a));
+    oriented = signedArea(largest) < 0 ? placed.map(reverse) : placed;
+  }
   return {
-    contours: scaled.map((contour) => {
-      const placed = mapContour(contour, place);
-      return signedArea(placed) < 0 ? reverse(placed) : placed;
-    }),
+    contours: oriented,
     advanceWidth: Math.round(xMax - xMin) + sideBearing * 2,
   };
 }

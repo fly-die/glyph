@@ -77,14 +77,24 @@ interface AssembledFont {
  * are left out. The space is a bit over half as wide as the 'n'. Side
  * bearings follow the stroke weight of the whole font.
  */
-function assemble(strokesByChar: ReadonlyMap<string, readonly Stroke[]>, familyName: string): AssembledFont {
+function assemble(
+  strokesByChar: ReadonlyMap<string, readonly Stroke[]>,
+  familyName: string,
+  tracedByChar: ReadonlyMap<string, readonly Contour[]>,
+): AssembledFont {
   const glyphs: Glyph[] = [];
   const placed: PlacedGlyph[] = [];
   let spaceWidth = FALLBACK_SPACE_WIDTH;
-  const bearing = sideBearing(strokesByChar);
+  const bearing = sideBearing(strokesByChar, tracedByChar);
 
   for (const char of CHARSET) {
-    const outline = toFontUnits(strokesToContours(strokesByChar.get(char) ?? [], PEN_WIDTH), bearing);
+    // A drawn glyph wins over a traced one for the same character.
+    const strokes = strokesByChar.get(char) ?? [];
+    const traced = tracedByChar.get(char) ?? [];
+    const outline =
+      strokes.length > 0
+        ? toFontUnits(strokesToContours(strokes, PEN_WIDTH), bearing)
+        : toFontUnits(traced, bearing, 'nested');
     if (!outline) continue;
     if (char === 'n') spaceWidth = Math.round(outline.advanceWidth * SPACE_PER_N);
     const name = glyphName(char);
@@ -121,9 +131,16 @@ export function kerningFor(placed: readonly PlacedGlyph[], bearing: number): Ker
   return computeKerning(placed, { target: bearing * 2, bottom: DESCENDER, top: ASCENDER });
 }
 
-/** The finished .otf file, with automatic kerning. */
-export function buildFontFile(strokesByChar: ReadonlyMap<string, readonly Stroke[]>, familyName: string): ArrayBuffer {
-  const { font, placed, sideBearing: bearing } = assemble(strokesByChar, familyName);
+/**
+ * The finished .otf file, with automatic kerning. `tracedByChar` holds glyphs
+ * read from a photographed sheet, as outlines in cell pixels.
+ */
+export function buildFontFile(
+  strokesByChar: ReadonlyMap<string, readonly Stroke[]>,
+  familyName: string,
+  tracedByChar: ReadonlyMap<string, readonly Contour[]> = new Map(),
+): ArrayBuffer {
+  const { font, placed, sideBearing: bearing } = assemble(strokesByChar, familyName, tracedByChar);
   const otf = font.toArrayBuffer();
   const glyphIds = new Map<string, number>();
   for (let index = 0; index < font.glyphs.length; index++) {
