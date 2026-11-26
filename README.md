@@ -27,7 +27,7 @@ Status: early build. Draw mode works from first stroke to installed font. Paper 
 - **Outlines:** each stroke is expanded to the area the pen covered, simplified with Ramer-Douglas-Peucker and fitted with cubic beziers. Overlaps keep the same winding, so a non-zero fill paints exactly the ink.
 - **Font units:** the baseline and x-height guides of the cell set one scale for all glyphs: 1000 units per em, x-height at 500. Glyphs are not stretched to fill the box, so a small letter stays small.
 - **Spacing:** the side bearings follow the stroke weight of the whole font, 0.6 times the median stroke width, so heavy writing gets more room than light writing.
-- **OpenType:** [opentype.js](https://github.com/opentypejs/opentype.js) writes the font: `cmap`, `hmtx`, a space as wide as the `n`, and a `name` table with your family name. Curly quotes and the Unicode hyphen map to the straight ones you drew, so text typed in apps with smart quotes still shows your glyphs.
+- **OpenType:** [opentype.js](https://github.com/opentypejs/opentype.js) writes the font: `cmap`, `hmtx`, a space a bit over half as wide as the `n`, and a `name` table with your family name. Curly quotes and the Unicode hyphen map to the straight ones you drew, so text typed in apps with smart quotes still shows your glyphs.
 - **WOFF2:** [woff2-encoder](https://github.com/itskyedo/woff2-encoder) compresses the font with WebAssembly. It is loaded only when you ask for a `.woff2`.
 - **Live font:** the font is loaded straight from memory through the FontFace API and shared by the type tester, the preview strip and the wordmark.
 

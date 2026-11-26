@@ -52,14 +52,20 @@ describe('buildFont', () => {
     expect(font.getEnglishName('postScriptName')).toBe('FlynnScript-Regular');
   });
 
-  it('makes the space as wide as the n', () => {
+  it('marks the font as regular weight', () => {
+    const os2 = roundTrip({ A }).tables.os2 as unknown as { usWeightClass: number };
+    expect(os2.usWeightClass).toBe(400);
+  });
+
+  it('makes the space a bit over half as wide as the n', () => {
     const font = roundTrip({ n: N, A });
-    expect(font.charToGlyph(' ').advanceWidth).toBe(font.charToGlyph('n').advanceWidth);
+    const n = font.charToGlyph('n').advanceWidth ?? 0;
+    expect(font.charToGlyph(' ').advanceWidth).toBe(Math.round(n * 0.55));
     expect(font.charToGlyph(' ').path.commands).toHaveLength(0);
   });
 
   it('falls back to a fixed space when there is no n', () => {
-    expect(roundTrip({ A }).charToGlyph(' ').advanceWidth).toBe(320);
+    expect(roundTrip({ A }).charToGlyph(' ').advanceWidth).toBe(300);
   });
 
   it('places outlines on the baseline with side bearings around the ink', () => {

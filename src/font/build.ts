@@ -5,6 +5,7 @@ import {
   DESCENDER,
   FALLBACK_SPACE_WIDTH,
   PEN_WIDTH,
+  SPACE_PER_N,
   UNITS_PER_EM,
 } from '../glyphs/metrics';
 import { toFontUnits } from '../glyphs/normalize';
@@ -13,6 +14,8 @@ import { strokesToContours, type Contour, type Stroke } from '../outline';
 
 export const DEFAULT_FAMILY_NAME = 'My Hand';
 const MAX_FAMILY_NAME_LENGTH = 40;
+/** usWeightClass of a regular font. The opentype.js types ask for a string, the writer needs the number. */
+const REGULAR_WEIGHT = 400;
 
 /**
  * Font menus and the PostScript name only take plain ASCII reliably, so the
@@ -61,7 +64,7 @@ function notdefGlyph(): Glyph {
 
 /**
  * Builds an OpenType font from the drawn strokes. Characters without strokes
- * are left out. The space is as wide as the 'n'. Side bearings follow the
+ * are left out. The space is a bit over half as wide as the 'n'. Side bearings follow the
  * stroke weight of the whole font.
  */
 export function buildFont(strokesByChar: ReadonlyMap<string, readonly Stroke[]>, familyName: string): Font {
@@ -72,7 +75,7 @@ export function buildFont(strokesByChar: ReadonlyMap<string, readonly Stroke[]>,
   for (const char of CHARSET) {
     const outline = toFontUnits(strokesToContours(strokesByChar.get(char) ?? [], PEN_WIDTH), bearing);
     if (!outline) continue;
-    if (char === 'n') spaceWidth = outline.advanceWidth;
+    if (char === 'n') spaceWidth = Math.round(outline.advanceWidth * SPACE_PER_N);
     glyphs.push(
       new Glyph({
         name: glyphName(char),
@@ -89,6 +92,8 @@ export function buildFont(strokesByChar: ReadonlyMap<string, readonly Stroke[]>,
   return new Font({
     familyName: family,
     styleName: 'Regular',
+    // Without this opentype.js marks the font as Medium (500).
+    weightClass: REGULAR_WEIGHT as unknown as string,
     postScriptName: `${family.replace(/ /g, '')}-Regular`,
     unitsPerEm: UNITS_PER_EM,
     ascender: ASCENDER,

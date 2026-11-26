@@ -30,5 +30,11 @@ export const PEN_WIDTH = 12;
  */
 export const SIDE_BEARING_PER_STEM = 0.6;
 
+/**
+ * Width of the space as a share of the advance width of the 'n'. A space as
+ * wide as a whole letter tears the words of a line apart.
+ */
+export const SPACE_PER_N = 0.55;
+
 /** Width of the space when no 'n' has been drawn yet. */
-export const FALLBACK_SPACE_WIDTH = 320;
+export const FALLBACK_SPACE_WIDTH = 300;
