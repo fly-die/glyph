@@ -2,7 +2,7 @@ import { parse } from 'opentype.js';
 import { decompress } from 'woff2-encoder';
 import { describe, expect, it } from 'vitest';
 import type { Stroke } from '../outline';
-import { buildFont } from './build';
+import { buildFontFile } from './build';
 import { toWoff2 } from './woff2';
 
 const line = (x0: number, y0: number, x1: number, y1: number): Stroke =>
@@ -19,7 +19,7 @@ describe('toWoff2', () => {
       ['x', [line(40, 80, 120, 160), line(120, 80, 40, 160)]],
       ['.', [[{ x: 60, y: 155, pressure: 0.5 }]]],
     ]);
-    const otf = buildFont(strokes, 'Web Hand').toArrayBuffer();
+    const otf = buildFontFile(strokes, 'Web Hand');
     const woff2 = await toWoff2(otf);
 
     expect(new TextDecoder().decode(woff2.slice(0, 4))).toBe('wOF2');

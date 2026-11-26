@@ -11,6 +11,9 @@ import {
 import { toFontUnits } from '../glyphs/normalize';
 import { sideBearing } from '../glyphs/spacing';
 import { strokesToContours, type Contour, type Stroke } from '../outline';
+import { buildGposTable } from './gpos';
+import { computeKerning, type KernPair, type PlacedGlyph } from './kerning';
+import { addTables } from './sfnt';
 
 export const DEFAULT_FAMILY_NAME = 'My Hand';
 const MAX_FAMILY_NAME_LENGTH = 40;
@@ -62,13 +65,21 @@ function notdefGlyph(): Glyph {
   return new Glyph({ name: '.notdef', unicode: 0, advanceWidth: 500, path });
 }
 
+interface AssembledFont {
+  font: Font;
+  /** Drawn glyphs as placed in the font, for kerning. */
+  placed: PlacedGlyph[];
+  sideBearing: number;
+}
+
 /**
  * Builds an OpenType font from the drawn strokes. Characters without strokes
- * are left out. The space is a bit over half as wide as the 'n'. Side bearings follow the
- * stroke weight of the whole font.
+ * are left out. The space is a bit over half as wide as the 'n'. Side
+ * bearings follow the stroke weight of the whole font.
  */
-export function buildFont(strokesByChar: ReadonlyMap<string, readonly Stroke[]>, familyName: string): Font {
+function assemble(strokesByChar: ReadonlyMap<string, readonly Stroke[]>, familyName: string): AssembledFont {
   const glyphs: Glyph[] = [];
+  const placed: PlacedGlyph[] = [];
   let spaceWidth = FALLBACK_SPACE_WIDTH;
   const bearing = sideBearing(strokesByChar);
 
@@ -76,9 +87,11 @@ export function buildFont(strokesByChar: ReadonlyMap<string, readonly Stroke[]>,
     const outline = toFontUnits(strokesToContours(strokesByChar.get(char) ?? [], PEN_WIDTH), bearing);
     if (!outline) continue;
     if (char === 'n') spaceWidth = Math.round(outline.advanceWidth * SPACE_PER_N);
+    const name = glyphName(char);
+    placed.push({ name, advanceWidth: outline.advanceWidth, contours: outline.contours });
     glyphs.push(
       new Glyph({
-        name: glyphName(char),
+        name,
         unicode: char.codePointAt(0) ?? 0,
         unicodes: codePoints(char),
         advanceWidth: outline.advanceWidth,
@@ -89,7 +102,7 @@ export function buildFont(strokesByChar: ReadonlyMap<string, readonly Stroke[]>,
 
   const space = new Glyph({ name: 'space', unicode: 32, advanceWidth: spaceWidth, path: new Path() });
   const family = sanitizeFamilyName(familyName);
-  return new Font({
+  const font = new Font({
     familyName: family,
     styleName: 'Regular',
     // Without this opentype.js marks the font as Medium (500).
@@ -100,6 +113,25 @@ export function buildFont(strokesByChar: ReadonlyMap<string, readonly Stroke[]>,
     descender: DESCENDER,
     glyphs: [notdefGlyph(), space, ...glyphs],
   });
+  return { font, placed, sideBearing: bearing };
+}
+
+/** Kerning for the drawn glyphs: the closest point of two neighbours gets the room of two side bearings. */
+export function kerningFor(placed: readonly PlacedGlyph[], bearing: number): KernPair[] {
+  return computeKerning(placed, { target: bearing * 2, bottom: DESCENDER, top: ASCENDER });
+}
+
+/** The finished .otf file, with automatic kerning. */
+export function buildFontFile(strokesByChar: ReadonlyMap<string, readonly Stroke[]>, familyName: string): ArrayBuffer {
+  const { font, placed, sideBearing: bearing } = assemble(strokesByChar, familyName);
+  const otf = font.toArrayBuffer();
+  const glyphIds = new Map<string, number>();
+  for (let index = 0; index < font.glyphs.length; index++) {
+    const glyph = font.glyphs.get(index);
+    if (glyph.name) glyphIds.set(glyph.name, index);
+  }
+  const gpos = buildGposTable(kerningFor(placed, bearing), glyphIds);
+  return gpos ? addTables(otf, { GPOS: gpos }) : otf;
 }
 
 export function fontFileName(familyName: string, extension: 'otf' | 'woff2' = 'otf'): string {

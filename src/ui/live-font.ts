@@ -1,4 +1,4 @@
-import { buildFont } from '../font/build';
+import { buildFontFile } from '../font/build';
 import type { Project } from '../state/project';
 
 const REBUILD_DELAY_MS = 200;
@@ -26,7 +26,7 @@ export function mountLiveFont(project: Project): void {
     }
     // A fresh family name per build makes the browser drop the previous face.
     const family = `glyph-preview-${run}`;
-    const face = new FontFace(family, buildFont(project.allStrokes(), project.familyName).toArrayBuffer());
+    const face = new FontFace(family, buildFontFile(project.allStrokes(), project.familyName));
     try {
       await face.load();
     } catch {

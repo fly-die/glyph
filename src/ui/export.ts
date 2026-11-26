@@ -1,5 +1,5 @@
 import './export.css';
-import { buildFont, DEFAULT_FAMILY_NAME, fontFileName, sanitizeFamilyName } from '../font/build';
+import { buildFontFile, DEFAULT_FAMILY_NAME, fontFileName, sanitizeFamilyName } from '../font/build';
 import { downloadFile } from '../font/download';
 import { toWoff2 } from '../font/woff2';
 import type { Project } from '../state/project';
@@ -62,7 +62,7 @@ export function mountExport(parent: HTMLElement, project: Project, step: number)
   });
   button.addEventListener('click', () => {
     const fileName = fontFileName(project.familyName);
-    downloadFile(buildFont(project.allStrokes(), project.familyName).toArrayBuffer(), fileName, 'font/otf');
+    downloadFile(buildFontFile(project.allStrokes(), project.familyName), fileName, 'font/otf');
     note = `Downloaded ${fileName}. Open the file and choose Install.`;
     update();
   });
@@ -70,7 +70,7 @@ export function mountExport(parent: HTMLElement, project: Project, step: number)
     compressing = true;
     update();
     const fileName = fontFileName(project.familyName, 'woff2');
-    const otf = buildFont(project.allStrokes(), project.familyName).toArrayBuffer();
+    const otf = buildFontFile(project.allStrokes(), project.familyName);
     toWoff2(otf)
       .then((woff2) => {
         downloadFile(woff2, fileName, 'font/woff2');

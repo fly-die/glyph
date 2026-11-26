@@ -1,7 +1,7 @@
 import { parse } from 'opentype.js';
 import { describe, expect, it } from 'vitest';
 import type { Stroke } from '../outline';
-import { buildFont, fontFileName, sanitizeFamilyName } from './build';
+import { buildFontFile, fontFileName, sanitizeFamilyName } from './build';
 
 function stroke(points: [number, number][], pressure = 0.5): Stroke {
   return points.flatMap(([x, y], index) => {
@@ -20,11 +20,10 @@ const A = [stroke([[30, 160], [80, 20], [130, 160]]), stroke([[55, 110], [105, 1
 const SEVEN = [stroke([[40, 30], [120, 30], [70, 160]])];
 
 function roundTrip(strokes: Record<string, Stroke[]>, family = 'Test Hand') {
-  const font = buildFont(new Map(Object.entries(strokes)), family);
-  return parse(font.toArrayBuffer());
+  return parse(buildFontFile(new Map(Object.entries(strokes)), family));
 }
 
-describe('buildFont', () => {
+describe('buildFontFile', () => {
   it('writes a font that parses back with the drawn glyphs mapped', () => {
     const font = roundTrip({ n: N, A, 7: SEVEN });
     expect(font.unitsPerEm).toBe(1000);
