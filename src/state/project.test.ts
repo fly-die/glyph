@@ -31,6 +31,32 @@ describe('Project', () => {
     expect(project.familyName).toBe('Flynn Hand');
   });
 
+  it('undoes and redoes the most recent strokes across the page', () => {
+    const project = new Project();
+    project.addStroke('a', first);
+    project.addStroke('b', second);
+    project.addStroke('a', second);
+    expect(project.undoLast()).toBe('a');
+    expect(project.undoLast()).toBe('b');
+    expect(project.strokesOf('a')).toEqual([first]);
+    expect(project.strokesOf('b')).toEqual([]);
+    expect(project.redo()).toBe('b');
+    expect(project.strokesOf('b')).toEqual([second]);
+    project.addStroke('c', first);
+    expect(project.redo()).toBeNull();
+  });
+
+  it('keeps the page order right when a single cell is undone or cleared', () => {
+    const project = new Project();
+    project.addStroke('x', first);
+    project.addStroke('y', first);
+    project.addStroke('x', second);
+    project.undo('x');
+    expect(project.undoLast()).toBe('y');
+    project.clear('x');
+    expect(project.undoLast()).toBeNull();
+  });
+
   it('clears one glyph and leaves the others alone', () => {
     const project = new Project();
     project.addStroke('a', first);

@@ -12,6 +12,10 @@ type Listener = (char: string | null) => void;
 export class Project {
   private readonly strokes = new Map<string, Stroke[]>();
   private readonly listeners = new Set<Listener>();
+  /** Characters in the order their strokes were drawn, for undo across the whole page. Not saved. */
+  private history: string[] = [];
+  /** Strokes taken back by undo, most recent last, until something new is drawn. */
+  private redoStack: { char: string; stroke: Stroke }[] = [];
   private name: string;
 
   constructor(data?: ProjectData) {
@@ -44,20 +48,48 @@ export class Project {
 
   addStroke(char: string, stroke: Stroke): void {
     if (stroke.length === 0) return;
-    this.strokes.set(char, [...this.strokesOf(char), stroke]);
-    this.emit(char);
+    this.redoStack = [];
+    this.push(char, stroke);
   }
 
   /** Removes the most recent stroke of one glyph. */
   undo(char: string): void {
-    const remaining = this.strokesOf(char).slice(0, -1);
+    const strokes = this.strokesOf(char);
+    const last = strokes[strokes.length - 1];
+    if (!last) return;
+    const remaining = strokes.slice(0, -1);
     if (remaining.length > 0) this.strokes.set(char, remaining);
     else this.strokes.delete(char);
+    const at = this.history.lastIndexOf(char);
+    if (at >= 0) this.history.splice(at, 1);
+    this.redoStack.push({ char, stroke: last });
     this.emit(char);
+  }
+
+  /**
+   * Removes the most recent stroke on the whole page and returns its
+   * character, or null when there is nothing to take back. Strokes drawn
+   * before this visit have no order and are not undone this way.
+   */
+  undoLast(): string | null {
+    const char = this.history[this.history.length - 1];
+    if (char === undefined) return null;
+    this.undo(char);
+    return char;
+  }
+
+  /** Puts back the stroke taken away last by undo. Returns its character, or null. */
+  redo(): string | null {
+    const entry = this.redoStack.pop();
+    if (!entry) return null;
+    this.push(entry.char, entry.stroke);
+    return entry.char;
   }
 
   clear(char: string): void {
     this.strokes.delete(char);
+    this.history = this.history.filter((entry) => entry !== char);
+    this.redoStack = [];
     this.emit(char);
   }
 
@@ -65,7 +97,15 @@ export class Project {
   reset(): void {
     const drawn = [...this.strokes.keys()];
     this.strokes.clear();
+    this.history = [];
+    this.redoStack = [];
     for (const char of drawn) this.emit(char);
+  }
+
+  private push(char: string, stroke: Stroke): void {
+    this.strokes.set(char, [...this.strokesOf(char), stroke]);
+    this.history.push(char);
+    this.emit(char);
   }
 
   /** Calls `listener` with the changed character, or null when the name changed. */
