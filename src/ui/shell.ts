@@ -19,7 +19,6 @@ export function mountShell(root: HTMLElement, settings: Settings): HTMLElement {
     ]),
     main,
     el('footer', { class: 'page__footer' }, [
-      el('span', {}, ['Runs entirely in your browser.']),
       el('a', { href: 'https://github.com/fly-die/glyph' }, ['Source on GitHub']),
     ]),
   );
